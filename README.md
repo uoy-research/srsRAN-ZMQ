@@ -1,9 +1,7 @@
 # srsRAN with ZMQ
 
-Step-by-step instructions for setting up the project with various configurations (Dockerized 5G core, Non Dockerized 5G core, Single UE, Multiple UEs, Single gNB, Multiple gNBs, FlexRIC, OSC RIC) on Ubuntu 22.04
-
-**Heads Up!!!**
-The configuration files included in this project are deprecated due to updates in srsRAN. You can still follow the steps outlined here, but make sure to use the latest configuration files from the official srsRAN website.
+Step-by-step instructions for setting up srsRAN with ZMQ on Ubuntu 22.04
+Please download the gNB and UE config files from the official srsRAN website.
 
 ## Overview of the architecture
 
@@ -105,11 +103,31 @@ sudo make install
 srsran_install_configs.sh user
 ```
 
-### Installation of the 5g Core
+### Add dockerised 5g core
 
-Pick between [Dockerised 5g core (recommended)](dockerised_5gcore/README.md) and [Simple 5g core](simple_5gcore/README.md)
+```bash
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
 
-Once the 5g core, gNB and ue are connected successfully, we can move ahead and add RIC to this setup
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+sudo docker run hello-world
+
+```
 
 # Adding NearRT-RIC and xApp to the base srsRAN architecture
 
@@ -247,35 +265,3 @@ E2SM_KPM RIC Indication Content:
 ---Metric: DRB.UEThpDl, Value: [7]
 ---Metric: DRB.UEThpUl, Value: [7]
 ```
-
-## Grafana UI
-
-Add the following in the gnb_zmq.yaml config file
-
-```bash
-metrics:
-enable_json_metrics: true # Enable reporting metrics in JSON format
-addr: 172.19.1.4 # Metrics-server IP
-port: 55555 # Metrics-server Port
-```
-
-To launch the docker image for the Grafana UI,
-
-```bash
-cd srsRAN_Project
-sudo docker compose -f docker/docker-compose.yml up grafana
-```
-
-The following output should be observed:
-
-```bash
-Creating network "docker_ran" with the default driver
-Starting metrics_server ...
-Starting metrics_server ... done
-Creating grafana        ... done
-Attaching to grafana
-```
-
-Navigating to http://localhost:3300/ in your preferred web browser will allow you to view the UI.
-
-You can then run srsRAN as normal. As the UE(s) connect to the network you will begin to see an output for each. These figures and graphics will update automatically during runtime, showing plots for each UE on the network.
